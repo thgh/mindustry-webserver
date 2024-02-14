@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html class="" lang="en">
+  <head>
+    <title>Home</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <style>
+      html {
+        background: black;
+        color: white;
+        transition: all 0.5s;
+        font-family: 'Audiowide', sans-serif;
+      }
+      body {
+        margin: 20px 20px 0;
+        background: inherit;
+      }
+      .ws-connected {
+        background: #010;
+      }
+      .server-init {
+        background: #600;
+      }
+      .server-stopped {
+        background: #200;
+      }
+      .host-started {
+        background: #020;
+      }
+      .if-started {
+        opacity: 0.4;
+        pointer-events: none;
+      }
+      .if-stopped {
+        opacity: 0.4;
+        pointer-events: none;
+      }
+      .if-host-started {
+        opacity: 0.4;
+        pointer-events: none;
+      }
+      .server-stopped .if-stopped {
+        opacity: 1;
+        pointer-events: all;
+      }
+      .server-started .if-started {
+        opacity: 1;
+        pointer-events: all;
+      }
+      .host-started .if-host-started {
+        opacity: 1;
+        pointer-events: all;
+      }
+      .host-started .if-not-host-started {
+        opacity: 0.4;
+        pointer-events: none;
+      }
+      img {
+        display: block;
+        max-width: 100%;
+      }
+      pre {
+        max-width: 100%;
+        white-space: pre-line;
+      }
+      select,
+      button {
+        text-align: center;
+        cursor: pointer;
+        color: #fff;
+        background-color: #222;
+        border: none;
+        border-bottom: 4px solid #444;
+        padding: 14px;
+        font-size: 16px;
+        font-family: inherit;
+        text-decoration: none;
+        transition-duration: 0.3s;
+      }
+      .cmd {
+        position: sticky;
+        display: flex;
+        gap: 10px;
+        bottom: 0;
+        background: black;
+        padding: 20px;
+        margin: 20px -20px 0;
+      }
+      .cmd input {
+        box-sizing: border-box;
+        flex: 1;
+        padding: 14px;
+        font-size: 18px;
+        font-family: inherit;
+        border: none;
+        border-bottom: 4px solid #444;
+        background: #222;
+        color: #fff;
+        outline: none;
+        transition-duration: 0.3s;
+      }
+    </style>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Audiowide&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div
+      style="
+        font-size: 3vw;
+        display: flex;
+        line-height: 1em;
+        gap: 1em;
+        text-transform: uppercase;
+        color: #ffffff22;
+      "
+    >
+      <h1 style="line-height: 1em; margin: 0">Mindustry Webserver</h1>
+    </div>
+    <div
+      style="
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        position: sticky;
+        top: 0;
+        background: inherit;
+        padding: 8px 0;
+      "
+    >
+      <div style="display: flex; gap: 8px">
+        <button type="button" class="if-stopped" onclick="cmd('start')">
+          Start
+        </button>
+        <button
+          type="button"
+          class="if-started if-not-host-started"
+          onclick="cmd('host')"
+        >
+          Host
+        </button>
+        <button type="button" class="if-host-started" onclick="cmd('stop')">
+          Stop
+        </button>
+        <button type="button" onclick="cmd('reset')">Reset</button>
+      </div>
+      <div
+        style="display: flex; flex-wrap: wrap; gap: 8px"
+        class="if-host-started"
+      >
+        <button type="button" onclick="cmd('gameover')">Game over</button>
+        <select name="nextmap" id="nextmap" onchange="nextmap(event)">
+          <option selected disabled>Choose next map...</option>
+          <option value="Ancient_Caldera">Ancient_Caldera: 256x256</option>
+          <option value="Archipelago">Archipelago: 500x500</option>
+          <option value="Debris_Field">Debris_Field: 400x400</option>
+          <option value="Domain">Domain: 494x494</option>
+          <option value="Fork">Fork: 250x300</option>
+          <option value="Fortress">Fortress: 256x256</option>
+          <option value="Glacier">Glacier: 150x250</option>
+          <option value="Islands">Islands: 256x256</option>
+          <option value="Labyrinth">Labyrinth: 200x200</option>
+          <option value="Maze">Maze: 256x256</option>
+          <option value="Molten_Lake">Molten_Lake: 400x400</option>
+          <option value="Mud_Flats">Mud_Flats: 400x400</option>
+          <option value="Passage">Passage: 500x120</option>
+          <option value="Shattered">Shattered: 350x350</option>
+          <option value="Tendrils">Tendrils: 300x300</option>
+          <option value="Triad">Triad: 200x200</option>
+          <option value="Veins">Veins: 350x200</option>
+          <option value="Wasteland">Wasteland: 300x300</option>
+        </select>
+        <button type="button" onclick="cmd('pause on')">Pause</button>
+        <button type="button" onclick="cmd('pause off')">Unpause</button>
+        <button type="button" onclick="cmd('runwave')">runwave</button>
+        <button type="button" onclick="cmd('status')">status</button>
+        <button type="button" onclick="cmd('help')">help</button>
+        <button type="button" onclick="cmd('fillitems')">fillitems</button>
+      </div>
+    </div>
+    <div>
+      <pre id="cls"></pre>
+      <pre id="logpre"></pre>
+    </div>
+    <div id="bottom"></div>
+    <form class="cmd">
+      <input type="text" autofocus placeholder="Command" />
+      <button type="submit">Submit</button>
+    </form>
+    <script defer async>
+      let client = 'init'
+      let server = { status: 'init', log: '' }
+      connectWebSocket()
+
+      document.querySelector('.cmd').addEventListener('submit', (event) => {
+        event.preventDefault()
+        const input = event.target.querySelector('input')
+        cmd(input.value)
+        commandIndex = 0
+        input.value = ''
+      })
+
+      // arrow up should load last command
+      let commandIndex = 0
+      document
+        .querySelector('.cmd input')
+        .addEventListener('keydown', (event) => {
+          if (event.key === 'ArrowUp') {
+            const commands = server.log
+              .split('\n')
+              .filter((line) => line.startsWith('>'))
+              .filter((value, index, self) => self.indexOf(value) === index)
+            commandIndex++
+            const lastCommand = commands[commands.length - commandIndex]
+            if (lastCommand) {
+              document.querySelector('.cmd input').value = lastCommand.slice(2)
+            }
+          }
+        })
+
+      async function nextmap(event) {
+        const map = event.target.value
+        log('> nextmap ' + map)
+        cmd('nextmap ' + map)
+      }
+
+      async function cmd(path, msg) {
+        if (
+          path === 'reset' &&
+          !confirm('Restart server and loose all config?')
+        )
+          return
+        log('> ' + path)
+        const data = await fetch('/api/?cmd=' + encodeURIComponent(path), {
+          method: 'POST',
+        }).then((res) => res.json())
+      }
+
+      function log(message) {
+        if (!message) return
+        logpre.innerText += message + '\n'
+      }
+
+      function connectWebSocket() {
+        const ws = new WebSocket(location.origin.replace('http', 'ws'))
+
+        ws.addEventListener('open', () => {
+          status = 'connected'
+          render()
+          log('WebSocket connected')
+        })
+
+        ws.addEventListener('message', (evt) => {
+          if (evt.data.startsWith('{')) {
+            server = { ...server, ...JSON.parse(evt.data) }
+            render()
+          } else log(evt.data)
+          bottom.scrollIntoView({ behavior: 'smooth' })
+        })
+
+        ws.addEventListener('close', () => {
+          status = 'disconnected'
+          render()
+          log('WebSocket connection closed')
+          setTimeout(connectWebSocket, 2000)
+        })
+
+        ws.addEventListener('error', (error) => {
+          status = 'error'
+          render()
+          error('WebSocket error:', error.message)
+        })
+      }
+
+      function render() {
+        const className =
+          'ws-' + status + ' server-' + server.status + ' host-' + server.host
+        document.documentElement.className = className
+        cls.innerText = Object.entries(server)
+          .filter(([key]) => key !== 'log')
+          .map(([key, value]) => key + ': ' + value)
+          .join('\n')
+        logpre.innerText = server.log
+      }
+    </script>
+  </body>
+</html>
