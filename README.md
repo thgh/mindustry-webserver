@@ -22,9 +22,10 @@ Make sure [Docker](https://docs.docker.com/get-docker/) is installed. Then run t
 
 ```sh
 # Port 80:
-docker run --rm -it thgh/mindustry-webserver
+docker run --rm -it -p 6576:6567 -p 80:80 thgh/mindustry-webserver
 # Or use another port:
-docker run --rm -it -e PORT=24024 -p 24024:24024 thgh/mindustry-webserver
+$PORT=24024
+docker run --rm -it -p 6576:6567 -e PORT=$PORT -p $PORT:$PORT thgh/mindustry-webserver
 # Press Ctrl+C to stop the server
 ```
 
